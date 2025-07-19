@@ -1,0 +1,585 @@
+<!-- Chosen Palette: Warm Neutrals with Subtle Blue Accents -->
+<!-- Application Structure Plan: The application is structured as a single-page interactive dashboard. It begins with a clear header and a user input section for core organizational data (number of employees, average salary) with an explicit "Calculate" button. Below this, a dynamic "Estimated Annual Savings" summary provides an immediate high-level overview. The core of the calculator is presented through a series of collapsible/expandable sections, each dedicated to a specific "Impact Area" (e.g., Turnover & Retention, Operational Efficiency). Within each impact area, relevant benchmarks are displayed alongside calculated costs and potential savings. This accordion-style layout allows users to drill down into specific areas of interest without overwhelming them. A final "Assumptions & Methodology" section provides transparency on the data sources and calculation logic. This structure was chosen for its clarity, ease of navigation, and ability to present complex calculations in digestible, interactive chunks, allowing users to focus on specific pain points. The "Calculate" button provides clearer user control. The chart section has been removed for a streamlined and fully functional experience. -->
+<!-- Visualization & Content Choices:
+- Report Info -> Goal: Present core organizational inputs for calculation. -> Viz/Presentation Method: Form inputs (number, text) with a "Calculate" button. -> Interaction: User enters data, clicks button. -> Justification: Direct and intuitive data entry with explicit trigger. -> Library/Method: HTML input elements, HTML button.
+- Report Info -> Goal: Summarize total estimated savings. -> Viz/Presentation Method: Large text display for total. -> Interaction: Updates dynamically with button click. -> Justification: Provides immediate high-level impact. -> Library/Method: HTML text.
+- Report Info -> Goal: Detail costs and potential savings for specific impact areas (e.g., Turnover). -> Viz/Presentation Method: Collapsible sections with text, calculated figures, and relevant benchmark data. -> Interaction: User expands/collapses sections for detail. -> Justification: Manages complexity, allows focused exploration. -> Library/Method: HTML/CSS (Tailwind), JavaScript for accordion logic.
+- Report Info -> Goal: Explain underlying data and calculation logic. -> Viz/Presentation Method: Textual explanation. -> Interaction: Static text. -> Justification: Ensures transparency and credibility. -> Library/Method: HTML text.
+- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groundwork OS Impact Estimator</title>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfcfc; /* Very light background */
+        }
+        @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)');
+
+        /* Custom styles for accordion */
+        .accordion-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background-color: #f1f5f9; /* Light slate */
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        .accordion-header:hover {
+            background-color: #e2e8f0; /* Lighter slate on hover */
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding: 0 1.5rem;
+        }
+        .accordion-content.active {
+            max-height: 1000px; /* Adjust as needed for content */
+            padding-bottom: 1.5rem;
+        }
+        .accordion-header .arrow {
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .arrow {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white p-6 sm:p-8 lg:p-10 rounded-lg shadow-lg">
+
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-3">Groundwork OS Impact Estimator</h1>
+            <p class="text-xl text-slate-600">Estimate the direct business benefits of cultivating peace of mind and operational excellence.</p>
+        </header>
+
+        <section class="mb-10 p-6 bg-blue-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold text-blue-800 mb-4">Your Organization's Profile</h2>
+            <p class="text-slate-700 mb-6">Enter your client's details and click "Calculate Impact" to generate a customized estimate. All calculations are based on the latest industry benchmarks.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                <div>
+                    <label for="numEmployees" class="block text-sm font-medium text-slate-700 mb-1">Number of Employees</label>
+                    <input type="number" id="numEmployees" value="1000" min="1" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                </div>
+                <div>
+                    <label for="avgAnnualSalary" class="block text-sm font-medium text-slate-700 mb-1">Average Annual Salary (CAD)</label>
+                    <input type="number" id="avgAnnualSalary" value="70000" min="1000" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                </div>
+                <div class="md:col-span-2 text-center mt-4">
+                    <button id="calculateBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                        Calculate Impact
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-10">
+            <h2 class="text-3xl font-bold text-slate-900 mb-6 text-center">Estimated Annual Savings</h2>
+            <div class="bg-green-50 p-6 rounded-lg shadow-md text-center mb-8">
+                <p class="text-xl text-green-800 font-semibold">Total Estimated Annual Savings:</p>
+                <p id="totalSavings" class="text-5xl font-extrabold text-green-700 mt-2">$0</p>
+            </div>
+            <p class="text-sm text-slate-600 text-center mt-4">The total estimated annual savings from implementing Groundwork OS, based on your organization's profile and industry benchmarks.</p>
+        </section>
+
+        <section class="mb-10">
+            <h2 class="text-3xl font-bold text-slate-900 mb-6 text-center">Detailed Impact Analysis</h2>
+            <p class="text-slate-700 mb-6 text-center">Explore the specific costs associated with common organizational pain points and the potential for improvement through Groundwork OS.</p>
+
+            <!-- Accordion for detailed impact areas -->
+            <div id="accordionContainer">
+
+                <!-- Turnover & Retention -->
+                <div class="mb-4">
+                    <div class="accordion-header shadow-sm" data-target="turnoverContent">
+                        <h3 class="text-lg font-semibold text-slate-800">Turnover & Retention</h3>
+                        <span class="arrow text-slate-600">&#9656;</span>
+                    </div>
+                    <div id="turnoverContent" class="accordion-content bg-white rounded-b-lg shadow-sm">
+                        <p class="text-slate-700 mb-4">High employee turnover is a significant drain on resources, leading to recruitment costs, onboarding expenses, and lost productivity. Groundwork OS fosters engagement and well-being, directly impacting retention.</p>
+                        <ul class="list-disc list-inside text-slate-700 mb-4">
+                            <li><span class="font-medium">Benchmark:</span> Average Voluntary Turnover Rate (Canada) - <span class="font-bold text-blue-700">11.9%</span> (Normandin Beaudry, 2023)</li>
+                            <li><span class="font-medium">Benchmark:</span> Cost to Replace One Employee - <span class="font-bold text-blue-700">100% of annual salary</span> (SHRM, 2022)</li>
+                            <li><span class="font-medium">Benchmark:</span> Impact of Engagement on Turnover - <span class="font-bold text-blue-700">18% reduction</span> (Gallup, 2020)</li>
+                        </ul>
+                        <p class="text-slate-700 mb-2"><span class="font-medium">Estimated Annual Turnover Cost:</span> <span id="turnoverCost" class="font-bold text-red-700">$0</span></p>
+                        <p class="text-slate-700"><span class="font-medium">Potential Annual Savings from Reduced Turnover:</span> <span id="turnoverSavings" class="font-bold text-green-700">$0</span></p>
+                    </div>
+                </div>
+
+                <!-- Disengagement & Culture -->
+                <div class="mb-4">
+                    <div class="accordion-header shadow-sm" data-target="disengagementContent">
+                        <h3 class="text-lg font-semibold text-slate-800">Disengagement & Culture</h3>
+                        <span class="arrow text-slate-600">&#9656;</span>
+                    </div>
+                    <div id="disengagementContent" class="accordion-content bg-white rounded-b-lg shadow-sm">
+                        <p class="text-slate-700 mb-4">Disengaged employees lead to reduced productivity, lower innovation, and a negative impact on overall morale. Groundwork OS aims to re-engage employees by fostering clarity, purpose, and control.</p>
+                        <ul class="list-disc list-inside text-slate-700 mb-4">
+                            <li><span class="font-medium">Benchmark:</span> Employee Disengagement Rate (U.S. & Canada) - <span class="font-bold text-blue-700">69%</span> (Gallup, 2024)</li>
+                            <li><span class="font-medium">Benchmark:</span> Productivity Loss from Disengagement - <span class="font-bold text-blue-700">18% of annual salary</span> (Gallup, 2021)</li>
+                        </ul>
+                        <p class="text-slate-700 mb-2"><span class="font-medium">Estimated Annual Cost of Disengagement:</span> <span id="disengagementCost" class="font-bold text-red-700">$0</span></p>
+                        <p class="text-slate-700"><span class="font-medium">Potential Annual Savings from Improved Engagement:</span> <span id="disengagementSavings" class="font-bold text-green-700">$0</span></p>
+                    </div>
+                </div>
+
+                <!-- Operational Inefficiency -->
+                <div class="mb-4">
+                    <div class="accordion-header shadow-sm" data-target="inefficiencyContent">
+                        <h3 class="text-lg font-semibold text-slate-800">Operational Efficiency & Productivity</h3>
+                        <span class="arrow text-slate-600">&#9656;</span>
+                    </div>
+                    <div id="inefficiencyContent" class="accordion-content bg-white rounded-b-lg shadow-sm">
+                        <p class="text-slate-700 mb-4">"Waste work" and unproductive meetings consume valuable time, hindering true productivity. Groundwork OS streamlines workflows, reduces mental clutter, and makes meetings more effective.</p>
+                        <ul class="list-disc list-inside text-slate-700 mb-4">
+                            <li><span class="font-medium">Benchmark:</span> Time on "Work About Work" - <span class="font-bold text-blue-700">58% of work day</span> (Asana, 2024)</li>
+                            <li><span class="font-medium">Benchmark:</span> Time in Unproductive Meetings - <span class="font-bold text-blue-700">5.4 hours/week/employee</span> (Rogelberg / HBR, 2022)</li>
+                        </ul>
+                        <p class="text-slate-700 mb-2"><span class="font-medium">Estimated Annual Cost of Waste Work:</span> <span id="wasteWorkCost" class="font-bold text-red-700">$0</span></p>
+                        <p class="text-slate-700 mb-2"><span class="font-medium">Estimated Annual Cost of Unproductive Meetings:</span> <span id="meetingCost" class="font-bold text-red-700">$0</span></p>
+                        <p class="text-slate-700"><span class="font-medium">Potential Annual Savings from Improved Efficiency:</span> <span id="efficiencySavings" class="font-bold text-green-700">$0</span></p>
+                    </div>
+                </div>
+
+                <!-- Knowledge Management & Collaboration -->
+                <div class="mb-4">
+                    <div class="accordion-header shadow-sm" data-target="knowledgeContent">
+                        <h3 class="text-lg font-semibold text-slate-800">Knowledge Management & Collaboration</h3>
+                        <span class="arrow text-slate-600">&#9656;</span>
+                    </div>
+                    <div id="knowledgeContent" class="accordion-content bg-white rounded-b-lg shadow-sm">
+                        <p class="text-slate-700 mb-4">Knowledge silos and poor documentation lead to wasted time searching for information and duplicated efforts. Groundwork OS fosters better knowledge transfer and a shared language for collective effectiveness.</p>
+                        <ul class="list-disc list-inside text-slate-700 mb-4">
+                            <li><span class="font-medium">Benchmark:</span> Time Lost Searching for Information - <span class="font-bold text-blue-700">10.9 hours/week/employee</span> (Panopto, 2021)</li>
+                            <li><span class="font-medium">Benchmark:</span> Annual Cost of Ineffective Knowledge Sharing - <span class="font-bold text-blue-700">$8.2M CAD / 1000 employees</span> (Panopto, 2021)</li>
+                        </ul>
+                        <p class="text-slate-700 mb-2"><span class="font-medium">Estimated Annual Cost of Knowledge Silos:</span> <span id="knowledgeCost" class="font-bold text-red-700">$0</span></p>
+                        <p class="text-slate-700"><span class="font-medium">Potential Annual Savings from Improved Knowledge Management:</span> <span id="knowledgeSavings" class="font-bold text-green-700">$0</span></p>
+                    </div>
+                </div>
+
+                <!-- Mental Health & Burnout -->
+                <div class="mb-4">
+                    <div class="accordion-header shadow-sm" data-target="mentalHealthContent">
+                        <h3 class="text-lg font-semibold text-slate-800">Mental Health & Burnout</h3>
+                        <span class="arrow text-slate-600">&#9656;</span>
+                    </div>
+                    <div id="mentalHealthContent" class="accordion-content bg-white rounded-b-lg shadow-sm">
+                        <p class="text-slate-700 mb-4">Mental health challenges and burnout are increasing, leading to absenteeism, presenteeism, and significant costs. Groundwork OS cultivates peace of mind, reducing stress and fostering well-being.</p>
+                        <ul class="list-disc list-inside text-slate-700 mb-4">
+                            <li><span class="font-medium">Benchmark:</span> Workers at High Mental Health Risk (Canada) - <span class="font-bold text-blue-700">42%</span> (TELUS Health, 2024)</li>
+                            <li><span class="font-medium">Benchmark:</span> Productivity Loss from Poor Mental Health - <span class="font-bold text-blue-700">3.2x higher likelihood</span> (TELUS Health, 2024)</li>
+                            <li><span class="font-medium">Benchmark:</span> Average Annual Cost of Mental Health Claims (Canada) - <span class="font-bold text-blue-700">$1,478 CAD/employee</span> (Deloitte, 2021)</li>
+                        </ul>
+                        <p class="text-slate-700 mb-2"><span class="font-medium">Estimated Annual Cost of Mental Health Issues (Claims):</span> <span id="mentalHealthClaimsCost" class="font-bold text-red-700">$0</span></p>
+                        <p class="text-slate-700 mb-2"><span class="font-medium">Estimated Annual Cost of Mental Health Issues (Productivity):</span> <span id="mentalHealthProductivityCost" class="font-bold text-red-700">$0</span></p>
+                        <p class="text-slate-700"><span class="font-medium">Potential Annual Savings from Improved Mental Well-being:</span> <span id="mentalHealthSavings" class="font-bold text-green-700">$0</span></p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="mb-10 p-6 bg-slate-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold text-slate-800 mb-4">Assumptions & Methodology</h2>
+            <p class="text-slate-700 mb-4">This calculator uses the following benchmarks and assumptions. All figures are in Canadian Dollars (CAD) unless otherwise specified. Potential savings are estimates based on a reasonable percentage of improvement that Groundwork OS aims to achieve in each area.</p>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metric Name</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit / Type</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Context</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Year</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="benchmarksTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Benchmarks will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-sm text-slate-600 mt-4">
+                <span class="font-semibold">Disclaimer:</span> This calculator provides estimates for illustrative purposes only. Actual results may vary based on specific organizational context, implementation effectiveness, and other factors.
+            </p>
+        </section>
+
+    </div>
+
+    <script>
+        const benchmarks = [
+            {
+                category: "General Benchmarks",
+                metric: "Average Hourly Wage (Base)",
+                value: 35.53,
+                unit: "CAD/hour",
+                context: "Canada-wide, all industries",
+                source: "Statistics Canada",
+                url: "[https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410022201](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410022201)",
+                year: "2024 (May)",
+                notes: "Represents the base hourly wage before adding employer costs (benefits, taxes). Used as the foundation for loaded wage calculations."
+            },
+            {
+                category: "General Benchmarks",
+                metric: "\"Loaded\" Wage Multiplier",
+                value: 1.4,
+                unit: "Factor",
+                context: "General rule for employer costs",
+                source: "BDO Canada / Industry Standard",
+                url: "[https://www.bdo.ca/en-ca/insights/industries/real-estate-construction/reality-check-blog/the-true-cost-of-your-construction-workforce/](https://www.bdo.ca/en-ca/insights/industries/real-estate-construction/reality-check-blog/the-true-cost-of-your-construction-workforce/)",
+                year: "2023",
+                notes: "Multiplier applied to base hourly wage to estimate the \"loaded\" cost including benefits, payroll taxes, etc. (e.g., $35.53 * 1.4 = ~$49.74 loaded hourly wage)."
+            },
+            {
+                category: "General Benchmarks",
+                metric: "Standard Annual Work Hours",
+                value: 2080,
+                unit: "Hours/year",
+                context: "Canada-wide standard",
+                source: "Standard Calculation",
+                url: "N/A",
+                year: "2024",
+                notes: "Standard assumption based on a 40-hour work week (40 hours x 52 weeks). Useful for high-level annual conversions."
+            },
+            {
+                category: "General Benchmarks",
+                metric: "Productive Annual Work Hours",
+                value: 1880,
+                unit: "Hours/year",
+                context: "Canada, accounting for time off",
+                source: "Derived Calculation",
+                url: "N/A",
+                year: "2024",
+                notes: "A more precise measure for productivity calculations. (52 weeks * 5 days) - (avg. 10 stat holidays) - (avg. 15 vacation days) = 235 days * 8 hours."
+            },
+            {
+                category: "Disengagement & Culture",
+                metric: "Employee Disengagement Rate",
+                value: 0.69, /* 69% */
+                unit: "% of workforce",
+                context: "U.S. & Canada",
+                source: "Gallup - State of the Global Workplace",
+                url: "[https://www.gallup.com/workplace/349484/state-of-the-global-workplace-2024-report.aspx](https://www.gallup.com/workplace/349484/state-of-the-global-workplace-2024-report.aspx)",
+                year: "2024",
+                notes: "Combines 'not engaged' (56%) and 'actively disengaged' (13%) employees. Represents the majority of the workforce who are not thriving."
+            },
+            {
+                category: "Disengagement & Culture",
+                metric: "Productivity Loss from Disengagement",
+                value: 0.18, /* 18% */
+                unit: "% of annual salary",
+                context: "Actively Disengaged Employees",
+                source: "Gallup",
+                url: "[https://www.gallup.com/workplace/231593/damage-inflicted-poor-managers.aspx](https://www.gallup.com/workplace/231593/damage-inflicted-poor-managers.aspx)",
+                year: "2021",
+                notes: "Quantifies the direct productivity cost of an actively disengaged employee, typically used to calculate the financial impact of disengagement on an organization."
+            },
+            {
+                category: "Disengagement & Culture",
+                metric: "Impact of Engagement on Turnover",
+                value: 0.18, /* 18% reduction */
+                unit: "Reduction in turnover",
+                context: "High vs. Low Engagement Teams",
+                source: "Gallup - Q12 Meta-Analysis",
+                url: "[https://www.gallup.com/workplace/321725/gallup-q12-meta-analysis-report.aspx](https://www.gallup.com/workplace/321725/gallup-q12-meta-analysis-report.aspx)",
+                year: "2020",
+                notes: "Shows the powerful link between improving engagement and reducing costly turnover. The range depends on the organization's baseline turnover rate."
+            },
+            {
+                category: "Turnover & Retention",
+                metric: "Average Voluntary Turnover Rate",
+                value: 0.119, /* 11.9% */
+                unit: "% per year",
+                context: "Canada-wide, all industries",
+                source: "Normandin Beaudry",
+                url: "[https://www.normandin-beaudry.ca/en/our-thoughts/2023-salary-increase-survey-results/](https://www.normandin-beaudry.ca/en/our-thoughts/2023-salary-increase-survey-results/)",
+                year: "2023 (for 2022 data)",
+                notes: "A strong Canadian benchmark for the percentage of employees who voluntarily leave their jobs, forming the basis for turnover cost calculations."
+            },
+            {
+                category: "Turnover & Retention",
+                metric: "Cost to Replace Employee",
+                value: 1.0, /* 100% of annual salary */
+                unit: "% of annual salary",
+                context: "North America, Knowledge Worker",
+                source: "Society for Human Resource Management (SHRM)",
+                url: "[https://www.shrm.org/resourcesandtools/tools-and-samples/hr-qa/pages/whatisthecostofemployeeturnover.aspx](https://www.shrm.org/resourcesandtools/tools-and-samples/hr-qa/pages/whatisthecostofemployeeturnover.aspx)",
+                year: "2022",
+                notes: "A standard range for calculating turnover costs. For an average Cdn salary of ~$65k, this is $32.5k (50%) to $130k (200%) per employee. Using 100% as a conservative middle ground."
+            },
+            {
+                category: "Mental Health & Burnout",
+                metric: "Workers at High Mental Health Risk",
+                value: 0.42, /* 42% */
+                unit: "% of workforce",
+                context: "Canada",
+                source: "TELUS Health Mental Health Index",
+                url: "[https://www.telus.com/en/health/mental-health-index](https://www.telus.com/en/health/mental-health-index)",
+                year: "2024 (May)",
+                notes: "Indicates the significant portion of the workforce struggling with mental health, which directly correlates to productivity loss and burnout."
+            },
+            {
+                category: "Mental Health & Burnout",
+                metric: "Productivity Loss from Poor Mental Health Factor",
+                value: 3.2, /* 3.2x higher likelihood */
+                unit: "Factor",
+                context: "High vs. Low Mental Health Risk",
+                source: "TELUS Health Mental Health Index",
+                url: "[https://www.telus.com/en/health/mental-health-index](https://www.telus.com/en/health/mental-health-index)",
+                year: "2024 (May)",
+                notes: "Employees at high mental health risk are over 3 times more likely to report their mental health negatively impacts their productivity."
+            },
+            {
+                category: "Mental Health & Burnout",
+                metric: "Average Annual Cost of Mental Health Claims",
+                value: 1478,
+                unit: "CAD/employee",
+                context: "Canada (for orgs studied)",
+                source: "Deloitte - A new lens on workplace mental health",
+                url: "[https://www2.deloitte.com/content/dam/Deloitte/ca/en/about/press-releases/ca-en-about-deloitte-workplace-mental-health-report-pov-a-new-lens-on-workplace-mental-health-final-aoda.pdf](https://www2.deloitte.com/content/dam/Deloitte/ca/en/about/press-releases/ca-en-about-deloitte-workplace-mental-health-report-pov-a-new-lens-on-workplace-mental-health-final-aoda.pdf)",
+                year: "2021",
+                notes: "Represents the direct cost of mental health-related insurance claims per employee, a key part of the total mental health cost to employers."
+            },
+            {
+                category: "Operational Inefficiency",
+                metric: "Time on \"Work About Work\"",
+                value: 0.58, /* 58% */
+                unit: "% of work day",
+                context: "Global Knowledge Workers",
+                source: "Asana - Anatomy of Work Index",
+                url: "[https://asana.com/resources/anatomy-of-work](https://asana.com/resources/anatomy-of-work)",
+                year: "2024",
+                notes: "Quantifies 'scrap/waste work'. This includes communicating about tasks, searching for info, and managing priorities instead of doing skilled work. (0.58 * 40hr week = 23.2 hours)."
+            },
+            {
+                category: "Operational Inefficiency",
+                metric: "Time in Unproductive Meetings",
+                value: 5.4,
+                unit: "Hours/week/employee",
+                context: "General Knowledge Worker",
+                source: "Steven G. Rogelberg (UNC Charlotte) / HBR",
+                url: "[https://hbr.org/2022/03/dear-manager-youre-holding-too-many-meetings](https://hbr.org/2022/03/dear-manager-youre-holding-too-many-meetings)",
+                year: "2022 (citing study)",
+                notes: "A widely-used benchmark for the time employees lose to ineffective meetings (based on avg. 18 hours in meetings, 30% of which are seen as unproductive)."
+            },
+            {
+                category: "Knowledge Management",
+                metric: "Time Lost Searching for Information",
+                value: 10.9,
+                unit: "Hours/week/employee",
+                context: "U.S. Knowledge Workers",
+                source: "Panopto - Workplace Knowledge and Productivity Report",
+                url: "[https://www.panopto.com/report/workplace-knowledge-and-productivity/](https://www.panopto.com/report/workplace-knowledge-and-productivity/)",
+                year: "2021",
+                notes: "Measures the significant productivity drain caused by knowledge silos and inefficient information access. A powerful metric for large organizations."
+            },
+            {
+                category: "Knowledge Management",
+                metric: "Annual Cost of Ineffective Knowledge Sharing (per 1000 employees)",
+                value: 6000000,
+                unit: "USD/year",
+                context: "U.S. based estimate",
+                source: "Panopto - Workplace Knowledge and Productivity Report",
+                url: "[https://www.panopto.com/blog/the-high-cost-of-inefficient-knowledge-sharing/](https://www.panopto.com/blog/the-high-cost-of-inefficient-knowledge-sharing/)",
+                year: "2021",
+                notes: "Provides a scalable dollar figure for the cost of knowledge management issues. This is a significant update from older benchmarks. ($6M USD is ~$8.2M CAD). Conversion rate used: 1 USD = 1.37 CAD (approx. July 2025)."
+            }
+        ];
+
+        const getBenchmark = (metricName) => benchmarks.find(b => b.metric === metricName);
+
+        const numEmployeesInput = document.getElementById('numEmployees');
+        const avgAnnualSalaryInput = document.getElementById('avgAnnualSalary');
+        const calculateBtn = document.getElementById('calculateBtn'); 
+        const totalSavingsDisplay = document.getElementById('totalSavings');
+
+        const turnoverCostDisplay = document.getElementById('turnoverCost');
+        const turnoverSavingsDisplay = document.getElementById('turnoverSavings');
+        const disengagementCostDisplay = document.getElementById('disengagementCost');
+        const disengagementSavingsDisplay = document.getElementById('disengagementSavings');
+        const wasteWorkCostDisplay = document.getElementById('wasteWorkCost');
+        const meetingCostDisplay = document.getElementById('meetingCost');
+        const efficiencySavingsDisplay = document.getElementById('efficiencySavings');
+        const knowledgeCostDisplay = document.getElementById('knowledgeCost');
+        const knowledgeSavingsDisplay = document.getElementById('knowledgeSavings');
+        const mentalHealthClaimsCostDisplay = document.getElementById('mentalHealthClaimsCost');
+        const mentalHealthProductivityCostDisplay = document.getElementById('mentalHealthProductivityCost');
+        const mentalHealthSavingsDisplay = document.getElementById('mentalHealthSavings');
+
+        const formatCurrency = (value) => {
+            return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+        };
+
+        const updateCalculator = () => {
+            const numEmployees = parseFloat(numEmployeesInput.value) || 0;
+            const avgAnnualSalary = parseFloat(avgAnnualSalaryInput.value) || 0;
+
+            if (numEmployees <= 0 || avgAnnualSalary <= 0) {
+                totalSavingsDisplay.textContent = formatCurrency(0);
+                turnoverCostDisplay.textContent = formatCurrency(0);
+                turnoverSavingsDisplay.textContent = formatCurrency(0);
+                disengagementCostDisplay.textContent = formatCurrency(0);
+                disengagementSavingsDisplay.textContent = formatCurrency(0);
+                wasteWorkCostDisplay.textContent = formatCurrency(0);
+                meetingCostDisplay.textContent = formatCurrency(0);
+                efficiencySavingsDisplay.textContent = formatCurrency(0);
+                knowledgeCostDisplay.textContent = formatCurrency(0);
+                knowledgeSavingsDisplay.textContent = formatCurrency(0);
+                mentalHealthClaimsCostDisplay.textContent = formatCurrency(0);
+                mentalHealthProductivityCostDisplay.textContent = formatCurrency(0);
+                mentalHealthSavingsDisplay.textContent = formatCurrency(0);
+                return;
+            }
+
+            const baseHourlyWage = getBenchmark("Average Hourly Wage (Base)").value;
+            const loadedWageMultiplier = getBenchmark("\"Loaded\" Wage Multiplier").value;
+            const loadedHourlyWage = baseHourlyWage * loadedWageMultiplier;
+            const productiveAnnualHours = getBenchmark("Productive Annual Work Hours").value;
+
+            // Turnover & Retention Calculations
+            const avgVoluntaryTurnoverRate = getBenchmark("Average Voluntary Turnover Rate").value;
+            const costToReplaceEmployeeFactor = getBenchmark("Cost to Replace Employee").value;
+            const impactOfEngagementOnTurnover = getBenchmark("Impact of Engagement on Turnover").value;
+
+            const annualExits = numEmployees * avgVoluntaryTurnoverRate;
+            const totalTurnoverCost = annualExits * (avgAnnualSalary * costToReplaceEmployeeFactor);
+            const potentialTurnoverReduction = annualExits * impactOfEngagementOnTurnover;
+            const turnoverSavings = potentialTurnoverReduction * (avgAnnualSalary * costToReplaceEmployeeFactor);
+
+            turnoverCostDisplay.textContent = formatCurrency(totalTurnoverCost);
+            turnoverSavingsDisplay.textContent = formatCurrency(turnoverSavings);
+
+            // Disengagement & Culture Calculations
+            const disengagementRate = getBenchmark("Employee Disengagement Rate").value;
+            const productivityLossDisengagement = getBenchmark("Productivity Loss from Disengagement").value;
+
+            const numDisengagedEmployees = numEmployees * disengagementRate;
+            const costOfDisengagement = numDisengagedEmployees * avgAnnualSalary * productivityLossDisengagement;
+            const disengagementSavings = costOfDisengagement * 0.2; // Assuming 20% improvement in engagement impact
+
+            disengagementCostDisplay.textContent = formatCurrency(costOfDisengagement);
+            disengagementSavingsDisplay.textContent = formatCurrency(disengagementSavings);
+
+            // Operational Inefficiency Calculations
+            const timeOnWorkAboutWork = getBenchmark("Time on \"Work About Work\"").value;
+            const timeUnproductiveMeetings = getBenchmark("Time in Unproductive Meetings").value;
+            const annualWorkHours = getBenchmark("Standard Annual Work Hours").value;
+
+            const annualHoursLostToWasteWork = numEmployees * annualWorkHours * timeOnWorkAboutWork;
+            const costOfWasteWork = annualHoursLostToWasteWork * loadedHourlyWage;
+
+            const annualHoursLostToUnproductiveMeetings = numEmployees * timeUnproductiveMeetings * 52; // 52 weeks in a year
+            const costOfUnproductiveMeetings = annualHoursLostToUnproductiveMeetings * loadedHourlyWage;
+
+            const efficiencySavings = (costOfWasteWork + costOfUnproductiveMeetings) * 0.15; // Assuming 15% reduction in these inefficiencies
+
+            wasteWorkCostDisplay.textContent = formatCurrency(costOfWasteWork);
+            meetingCostDisplay.textContent = formatCurrency(costOfUnproductiveMeetings);
+            efficiencySavingsDisplay.textContent = formatCurrency(efficiencySavings);
+
+            // Knowledge Management & Collaboration Calculations
+            const timeLostSearchingInfo = getBenchmark("Time Lost Searching for Information").value;
+            const costIneffectiveKnowledgeSharingPer1000USD = getBenchmark("Annual Cost of Ineffective Knowledge Sharing (per 1000 employees)").value;
+            const usdToCadRate = 1.37; // Approximate conversion rate
+            const costIneffectiveKnowledgeSharingPer1000CAD = costIneffectiveKnowledgeSharingPer1000USD * usdToCadRate;
+
+            const annualHoursLostSearching = numEmployees * timeLostSearchingInfo * 52;
+            const costOfKnowledgeSilos = annualHoursLostSearching * loadedHourlyWage;
+
+            const scaledKnowledgeSharingCost = (numEmployees / 1000) * costIneffectiveKnowledgeSharingPer1000CAD;
+            const knowledgeSavings = scaledKnowledgeSharingCost * 0.20; // Assuming 20% improvement in knowledge sharing
+
+            knowledgeCostDisplay.textContent = formatCurrency(costOfKnowledgeSilos);
+            knowledgeSavingsDisplay.textContent = formatCurrency(knowledgeSavings);
+
+            // Mental Health & Burnout Calculations
+            const workersAtHighMentalHealthRisk = getBenchmark("Workers at High Mental Health Risk").value;
+            const avgAnnualCostMentalHealthClaims = getBenchmark("Average Annual Cost of Mental Health Claims").value;
+            const productivityLossMentalHealthFactor = getBenchmark("Productivity Loss from Poor Mental Health Factor").value;
+
+            const totalMentalHealthClaimsCost = numEmployees * avgAnnualCostMentalHealthClaims;
+
+            const productivityLossPerAtRiskEmployee = avgAnnualSalary * 0.10; // 10% estimated productivity loss
+            const mentalHealthProductivityCost = (numEmployees * workersAtHighMentalHealthRisk) * productivityLossPerAtRiskEmployee;
+
+            const mentalHealthSavings = (totalMentalHealthClaimsCost * 0.15) + (mentalHealthProductivityCost * 0.15); // 15% reduction in both claims and productivity loss
+
+            mentalHealthClaimsCostDisplay.textContent = formatCurrency(totalMentalHealthClaimsCost);
+            mentalHealthProductivityCostDisplay.textContent = formatCurrency(mentalHealthProductivityCost);
+            mentalHealthSavingsDisplay.textContent = formatCurrency(mentalHealthSavings);
+
+            // Total Savings
+            const totalSavings = turnoverSavings + disengagementSavings + efficiencySavings + knowledgeSavings + mentalHealthSavings;
+            totalSavingsDisplay.textContent = formatCurrency(totalSavings);
+        };
+
+        const populateBenchmarksTable = () => {
+            const tableBody = document.getElementById('benchmarksTableBody');
+            tableBody.innerHTML = '';
+            benchmarks.forEach(b => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-2 whitespace-normal text-sm text-gray-800">${b.metric}</td>
+                    <td class="px-4 py-2 whitespace-normal text-sm text-gray-800">${typeof b.value === 'number' ? (b.unit.includes('%') ? (b.value * 100).toFixed(1) : b.value.toLocaleString('en-CA')) : b.value}</td>
+                    <td class="px-4 py-2 whitespace-normal text-sm text-gray-800">${b.unit}</td>
+                    <td class="px-4 py-2 whitespace-normal text-sm text-gray-800">${b.context}</td>
+                    <td class="px-4 py-2 whitespace-normal text-sm text-gray-800">
+                        ${b.url && b.url !== 'N/A' ? `<a href="${b.url}" target="_blank" class="text-blue-600 hover:underline">${b.source}</a>` : b.source}
+                    </td>
+                    <td class="px-4 py-2 whitespace-normal text-sm text-gray-800">${b.year}</td>
+                    <td class="px-4 py-2 whitespace-normal text-sm text-gray-800">${b.notes}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        };
+
+        // Accordion logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const targetId = header.dataset.target;
+                    const content = document.getElementById(targetId);
+                    const arrow = header.querySelector('.arrow');
+
+                    const isActive = content.classList.contains('active');
+
+                    // Close all other open accordions
+                    document.querySelectorAll('.accordion-content.active').forEach(openContent => {
+                        if (openContent.id !== targetId) {
+                            openContent.classList.remove('active');
+                            openContent.previousElementSibling.classList.remove('active');
+                        }
+                    });
+
+                    // Toggle current accordion
+                    content.classList.toggle('active');
+                    header.classList.toggle('active');
+                });
+            });
+
+            // Initial population of the benchmarks table
+            populateBenchmarksTable();
+
+            // Attach event listener to the "Calculate Impact" button
+            calculateBtn.addEventListener('click', updateCalculator);
+
+            // Trigger initial calculation on load with default values
+            updateCalculator();
+        });
+    </script>
+</body>
+</html>
